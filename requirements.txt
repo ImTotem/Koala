@@ -1,0 +1,4 @@
+beautifulsoup4==4.12.3
+plyer==2.1.0
+pytz==2024.2
+requests==2.32.3
