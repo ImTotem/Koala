@@ -15,10 +15,10 @@ class LoginService:
         self.cookie = cookie
 
     async def login(self):
-        ...
+        print('[LoginService] Login')
 
     async def refresh(self):
-        ...
+        print('[LoginService] Cookie refresh')
 
 
 __all__ = (
