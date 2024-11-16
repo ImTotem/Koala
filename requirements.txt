@@ -3,3 +3,5 @@ plyer==2.1.0
 pytz==2024.2
 aiohttp==3.10.10
 schedule==1.2.2
+dependency_injector==4.43.0
+pyyaml==6.0.2
