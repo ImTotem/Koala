@@ -1,10 +1,14 @@
 import asyncio
 
 from koala.di import DI
+from koala.domain.view.gui import gui_main
 
 
 def run() -> None:
-    container = DI()
-    container.wire(packages=['koala'])
+    di = DI()
+    di.wire(packages=['koala'])
 
-    asyncio.run(container.auth.service().login())
+    di.init_resources()
+    asyncio.run(di.schedule_manager().start())
+
+    gui_main()
