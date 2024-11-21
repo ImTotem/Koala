@@ -1,3 +1,5 @@
+"""설정 유효성 검사용"""
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pytz import timezone

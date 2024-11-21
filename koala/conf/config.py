@@ -1,3 +1,5 @@
+"""설정 관련 컨테이너 모듈"""
+
 from pathlib import Path
 from random import randint
 

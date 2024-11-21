@@ -1,8 +1,16 @@
+"""스케쥴 매니저 모듈"""
+
 from koala.domain.auth.service import LoginService
 from koala.domain.scheduler.thread import ScheduleThread
 
 
 class ScheduleManager:
+    """
+    주기적으로 동작해야하는 스케줄 관리
+
+    관리 방법: self._schedules 에 (주기적으로 실행 할 함수, 주기(단위: 초))를 추가
+
+    """
 
     def __init__(self,
                  login_service: LoginService,

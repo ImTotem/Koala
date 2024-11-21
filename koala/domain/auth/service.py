@@ -1,3 +1,5 @@
+"""포털 로그인 서비스 모듈"""
+
 from datetime import datetime
 
 from aiohttp import ClientSession
@@ -7,6 +9,20 @@ from koala.domain.auth.model import Cookies
 
 
 class LoginService:
+    """포털 로그인 서비스
+
+    :param portal_id: 포털 아이디
+    :type portal_id: str
+    :param portal_pw: 포털 비밀번호
+    :type portal_pw: str
+    :param portal_ip: 포털 접속 IP
+    :type portal_ip: str
+    :param cookies: 쿠키 저장소
+    :type cookies: Cookies
+    :param timezone: 타임존 정보
+    :type timezone: DstTzInfo
+    """
+
 
     def __init__(self,
                  portal_id: str,
@@ -26,8 +42,9 @@ class LoginService:
         }
 
     async def login(self):
-        """
-        로그인을 시도한다.
+        """포털 로그인을 수행한다.
+
+        :raises aiohttp.ClientError: HTTP 요청 실패시 발생
         """
         print('[LoginService] Try Login')
 

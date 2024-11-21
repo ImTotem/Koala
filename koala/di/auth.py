@@ -1,3 +1,5 @@
+"""인증 관련 의존성 컨테이너 모듈"""
+
 from dependency_injector import containers, providers
 
 from koala.domain.auth.model import Cookies
