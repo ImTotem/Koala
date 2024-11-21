@@ -1,3 +1,5 @@
+"""스케줄링과 크롤링에 사용되는 스레드를 정의해둔 모듈"""
+
 import asyncio
 import threading
 
@@ -31,3 +33,8 @@ class ScheduleThread(threading.Thread):
             self._loop.run_until_complete(asyncio.sleep(1))
 
         super().run()
+
+
+__all__ = (
+    'ScheduleThread',
+)
