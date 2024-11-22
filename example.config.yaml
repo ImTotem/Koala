@@ -1,0 +1,5 @@
+portal:
+  id: portal_id
+  password: portal_password
+
+timezone: Asia/Seoul

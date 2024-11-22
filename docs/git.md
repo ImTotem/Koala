@@ -34,3 +34,23 @@ git push origin feature/기능-이름
 > [!IMPORTANT]
 > `assign yourelf`를 누르기만 하면 됩니다.
 > 전부 작성했는지 확인 하고 `Create pull request` 눌러주세요.
+
+## 브랜치 이동 예시
+
+```mermaid
+gitGraph:
+    commit "initial commit"
+    branch develop
+    checkout develop
+    branch feature/login
+    branch feature/crawling
+    checkout feature/login
+    commit "feat: 로그인 구현"
+    checkout feature/crawling
+    commit "feat: 과제 정보 수집 구현"
+    checkout develop
+    merge feature/login
+    merge feature/crawling
+    checkout main
+    merge develop
+```

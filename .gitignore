@@ -163,5 +163,7 @@ cython_debug/
 
 # config.py
 
-**/config.py
+**/config.*
+!**/config.py
+
 **/.DS_Store
