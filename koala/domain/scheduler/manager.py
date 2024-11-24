@@ -1,5 +1,6 @@
 """스케쥴 매니저 모듈"""
 
+from koala.domain.assignment.service import AssignmentService
 from koala.domain.auth.service import LoginService
 from koala.domain.scheduler.thread import ScheduleThread
 
@@ -14,11 +15,14 @@ class ScheduleManager:
 
     def __init__(self,
                  login_service: LoginService,
+                 assignment_service: AssignmentService,
                  ):
         self._login_service = login_service
+        self._assignment_service = assignment_service
         self._thread = None
         self._schedules = (  # (job_func, interval_seconds)
             (self._login_service.refresh, 3 * 60 * 60),
+            (self._assignment_service.crawling, 3 * 60),
         )
 
     async def start(self):
