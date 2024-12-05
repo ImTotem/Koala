@@ -2,11 +2,11 @@
 
 전체 애플리케이션의 의존성을 관리하는 메인 컨테이너
 """
-from queue import PriorityQueue
 
 from dependency_injector import containers, providers
 
 from koala.batch.core.batch_manager import BatchManager
+from koala.batch.core.result_collector import ResultCollector
 from koala.batch.core.worker_pool import WorkerPool
 from koala.batch.scheduler.scheduler import Scheduler
 from koala.conf.config import ConfigContainer
@@ -38,16 +38,24 @@ class DI(containers.DeclarativeContainer):
         cookies=auth.cookies,
     )
 
+    result_collector = providers.ThreadSafeSingleton(
+        ResultCollector,
+        courses=assignment.courses
+    )
+
     worker_pool = providers.ThreadSafeSingleton(
-        WorkerPool
+        WorkerPool,
+        result_collector=result_collector,
     )
     worker_pool().start()
 
     batch_manager = providers.ThreadSafeSingleton(
         BatchManager,
-        worker_pool = worker_pool,
-        courses = assignment.courses
+        worker_pool=worker_pool,
+        courses=assignment.courses
     )
+
+    result_collector().attach(batch_manager())
 
     scheduler = providers.ThreadSafeSingleton(
         Scheduler,

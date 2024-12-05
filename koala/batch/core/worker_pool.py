@@ -1,21 +1,23 @@
+from queue import Queue
 from typing import List, Tuple
 
+from koala.batch.core.result_collector import ResultCollector
 from koala.batch.core.worker import Worker
-from koala.batch.models.shared_priority_queue import SharedPriorityQueue
 from koala.batch.models.work_item import WorkItem
 
 
 class WorkerPool:
-    def __init__(self, num_workers: int = 4):
+    def __init__(self, result_collector: ResultCollector, num_workers: int = 4):
+        self.result_collector = result_collector
         self.num_workers = num_workers
-        self.queue = SharedPriorityQueue()
+        self.queue = Queue()
         self.workers: List[Worker] = []
 
     def start(self) -> None:
         """워커 풀 시작"""
         # Worker 생성 및 시작
         for i in range(self.num_workers):
-            worker = Worker(f"Worker-{i}", self.queue)
+            worker = Worker(f"Worker-{i}", self.queue, self.result_collector)
             worker.start()
             self.workers.append(worker)
 

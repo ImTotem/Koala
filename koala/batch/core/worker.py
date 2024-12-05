@@ -1,17 +1,23 @@
 import asyncio
 import threading
-from queue import Empty
+from queue import Empty, Queue
 from typing import Optional
 
-from koala.batch.models.shared_priority_queue import SharedPriorityQueue
-from koala.batch.models.work_item import WorkItem
+from koala.batch.core.result_collector import ResultCollector
+from koala.batch.models.work_item import WorkItem, WorkResult
 
 
 class Worker(threading.Thread):
-    def __init__(self, name: str, queue: SharedPriorityQueue):
+    def __init__(
+            self,
+            name: str,
+            queue: Queue,
+            result_collector: ResultCollector
+    ):
         super().__init__()
         self.name = name
         self.queue = queue
+        self.result_collector = result_collector
         self.daemon = True  # 메인 스레드 종료시 함께 종료
         self.running = False
         self.loop: Optional[asyncio.AbstractEventLoop] = None
@@ -71,8 +77,19 @@ class Worker(threading.Thread):
             else:
                 await work_item.method()
 
+            self.result_collector.add_result(WorkResult(
+                work_type=work_item.type,
+                success=True
+            ))
+
             print(f"{self.name} completed {work_item.type.name}")
 
         except Exception as e:
+            self.result_collector.add_result(WorkResult(
+                work_type=work_item.type,
+                success=False,
+                error=e
+            ))
+
             print(f"{self.name} failed to execute {work_item.type.name}: {e}")
             raise
