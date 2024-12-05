@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 from typing import Set
 from urllib.parse import parse_qs, urlparse
@@ -26,29 +25,8 @@ class AssignmentService(Subject):
 
         return assignments
 
-    async def crawling(self):
-        print('[AssignmentService] Try Crawling')
-        await self._crawling_course()
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        futures = [
-            asyncio.ensure_future(
-                self._crawling_assignments(course)
-            )
-            for course in self._courses
-        ]
-        results = await asyncio.gather(*futures)
-
-        for result in results:
-            if result:
-                print("NOTIFY")
-                self.notify()
-                break
-
-        print('[AssignmentService] Crawling Successful')
-
-    async def _crawling_course(self):
+    async def crawling_course(self) -> None:
+        """과정 목록 크롤링"""
         async with aiohttp.ClientSession(cookies=self._cookies) as session:
             async with session.get("https://el2.koreatech.ac.kr/") as response:
                 html = await response.text()
@@ -64,7 +42,7 @@ class AssignmentService(Subject):
 
             self._courses.add(Course(_id, url, name))
 
-    async def _crawling_assignments(self, course):
+    async def crawling_assignments(self, course: Course) -> bool:
         async with aiohttp.ClientSession(cookies=self._cookies) as session:
             async with session.get(f'{course.url}&section=0') as response:
                 html = await response.text()
@@ -85,7 +63,11 @@ class AssignmentService(Subject):
                 if assignment:
                     assignments.append(assignment)
 
-        return course.update(assignments)
+        # 과제 업데이트 및 변경 여부 반환
+        has_changes = course.update(assignments)
+        if has_changes:
+            self.notify()
+        return has_changes
 
     def _crawling_assign(self, tag: Tag):
         activity, actions, *etc = tag.select('div')
