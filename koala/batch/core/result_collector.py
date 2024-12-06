@@ -1,3 +1,4 @@
+from multiprocessing import Queue
 from typing import Set
 
 from koala.batch.models.work_item import WorkResult, WorkType
@@ -7,10 +8,11 @@ from koala.utils import Subject
 
 class ResultCollector(Subject):
 
-    def __init__(self, courses: Set[Course]):
+    def __init__(self, courses: Set[Course], queue: Queue):
         super().__init__()
         self.pending_courses: int = 0
         self.courses = courses
+        self.queue = queue
 
     def add_result(self, result: WorkResult) -> None:
         """작업 결과 추가 및 BatchManager에 알림"""
@@ -20,6 +22,11 @@ class ResultCollector(Subject):
             return
 
         self.pending_courses += 1
+
+        if result.updated:
+            # TODO : dto 변환
+            self.queue.put(result.course)
+
         if self.pending_courses == len(self.courses):
             self.pending_courses = 0
             self.notify()

@@ -16,8 +16,8 @@ class Scheduler(threading.Thread):
             login_service: LoginService,
             assignment_service: AssignmentService
     ):
-        super().__init__()
-        self.daemon = True
+        super().__init__(daemon=False)
+        # self.daemon = False
         self.batch_manager = batch_manager
         self.running: bool = False
         self.login_service = login_service

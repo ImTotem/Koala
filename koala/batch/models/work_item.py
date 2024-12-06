@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from datetime import datetime
 from enum import Enum, auto
-from typing import Any, Optional, Callable, Tuple
+from typing import Optional, Callable, Tuple
+
+from koala.domain.assignment.model import Course
 
 
 class WorkType(Enum):
@@ -23,4 +24,6 @@ class WorkItem:
 class WorkResult:
     work_type: WorkType
     success: bool
+    updated: bool = False
+    course: Optional[Course] = None
     error: Optional[Exception] = None

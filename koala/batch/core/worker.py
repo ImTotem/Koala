@@ -73,14 +73,20 @@ class Worker(threading.Thread):
             print(f"{self.name} executing {work_item.type.name}")
 
             if hasattr(work_item, 'arguments') and work_item.arguments:
-                await work_item.method(*work_item.arguments)
+                method_result = await work_item.method(*work_item.arguments)
             else:
-                await work_item.method()
+                method_result = await work_item.method()
 
-            self.result_collector.add_result(WorkResult(
+            result = WorkResult(
                 work_type=work_item.type,
                 success=True
-            ))
+            )
+
+            if method_result is not None:
+                result.updated = method_result
+                result.course = work_item.arguments[0]
+
+            self.result_collector.add_result(result)
 
             print(f"{self.name} completed {work_item.type.name}")
 

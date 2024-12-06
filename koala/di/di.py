@@ -2,6 +2,7 @@
 
 전체 애플리케이션의 의존성을 관리하는 메인 컨테이너
 """
+from multiprocessing import Queue
 
 from dependency_injector import containers, providers
 
@@ -40,14 +41,14 @@ class DI(containers.DeclarativeContainer):
 
     result_collector = providers.ThreadSafeSingleton(
         ResultCollector,
-        courses=assignment.courses
+        courses=assignment.courses,
+        queue=None,
     )
 
     worker_pool = providers.ThreadSafeSingleton(
         WorkerPool,
         result_collector=result_collector,
     )
-    worker_pool().start()
 
     batch_manager = providers.ThreadSafeSingleton(
         BatchManager,
@@ -55,15 +56,12 @@ class DI(containers.DeclarativeContainer):
         courses=assignment.courses
     )
 
-    result_collector().attach(batch_manager())
-
     scheduler = providers.ThreadSafeSingleton(
         Scheduler,
         batch_manager=batch_manager,
         login_service=auth.service,
         assignment_service=assignment.service,
     )
-    scheduler().run()
 
 
 __all__ = (
