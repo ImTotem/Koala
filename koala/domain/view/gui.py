@@ -1,7 +1,6 @@
 import tkinter as tk
 import webbrowser
 from datetime import datetime
-from math import ceil
 from multiprocessing import Queue
 from queue import Empty
 from tkinter import ttk
