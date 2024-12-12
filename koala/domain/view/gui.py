@@ -45,10 +45,6 @@ class GUI(tk.Tk):
 
         self.after(100, self.check_update)
 
-    def _truncate_text(self, text: str, max_length: int = 30) -> str:
-        """텍스트가 너무 길 경우 말줄임표를 추가하여 줄임"""
-        return text if len(text) <= max_length else text[:max_length - 3] + "..."
-
     def _on_canvas_configure(self, event):
         self.canvas.itemconfig(self.canvas_window, width=event.width)
         self._update_scroll_region()
