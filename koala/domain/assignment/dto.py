@@ -9,5 +9,5 @@ class AssignmentDTO:
 
     @classmethod
     def factory(cls, assignment: BaseAssignment):
-        # TODO : 시간 보정
+        # TODO : 시간 A보정
         cls()
