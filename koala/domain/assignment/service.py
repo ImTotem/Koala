@@ -6,6 +6,7 @@ import aiohttp
 from bs4 import BeautifulSoup, Tag
 
 from koala.domain.assignment.model import Course, AssignAssignment, QuizAssignment, VideoAssignment, Status
+from koala.domain.assignment.notification import notify
 from koala.domain.auth.model import Cookies
 from koala.utils import Subject
 
@@ -24,6 +25,11 @@ class AssignmentService(Subject):
             assignments.extend(course.assignments.values())
 
         return assignments
+
+    def notify(self, has_changes=False):
+        super().notify()
+
+        notify(self._courses, has_changes=has_changes)
 
     async def crawling_course(self) -> None:
         """과정 목록 크롤링"""
