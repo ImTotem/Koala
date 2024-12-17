@@ -1,6 +1,4 @@
 @echo off
-chcp 65001
-:: UTF-8 인코딩 설정
 
 echo Checking Python version and building Koala...
 
