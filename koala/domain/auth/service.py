@@ -2,13 +2,12 @@
 
 from datetime import datetime
 
-from aiohttp import ClientSession
+import requests
 from pytz.tzinfo import DstTzInfo
+from requests.cookies import RequestsCookieJar
 
-from koala.domain.auth.model import Cookies
 
-
-class LoginService:
+class AuthService:
     """포털 로그인 서비스
 
     :param portal_id: 포털 아이디
@@ -23,12 +22,11 @@ class LoginService:
     :type timezone: DstTzInfo
     """
 
-
     def __init__(self,
                  portal_id: str,
                  portal_pw: str,
                  portal_ip: str,
-                 cookies: Cookies,
+                 cookies: RequestsCookieJar,
                  timezone: DstTzInfo
                  ):
         self._portal_id = portal_id
@@ -41,54 +39,59 @@ class LoginService:
             "X-Real-IP": self._portal_ip,
         }
 
-    async def login(self):
+    def get_cookies(self):
+        return self._cookies
+
+    def login(self):
         """포털 로그인을 수행한다.
 
-        :raises aiohttp.ClientError: HTTP 요청 실패시 발생
+        :raises requests.RequestException: HTTP 요청 실패시 발생
         """
-        print('[LoginService] Try Login')
+        print('[AuthService] Try Login')
 
-        async with ClientSession(cookies=self._cookies) as session:
-            await session.post(
+        with requests.Session() as session:
+            # 로그인 체크
+            session.post(
                 url='https://portal.koreatech.ac.kr/ktp/login/checkLoginId.do',
-                allow_redirects=True,
                 headers=self._headers,
                 data={
                     'login_id': self._portal_id,
                     'login_pwd': self._portal_pw,
-                }
+                },
+                allow_redirects=True
             )
 
-            session.cookie_jar.update_cookies({'kut_login_type': 'id'})
+            session.cookies.set('kut_login_type', 'id')
 
-            await session.post(
+            # 2차 인증
+            session.post(
                 url="https://portal.koreatech.ac.kr/ktp/login/checkSecondLoginCert.do",
-                allow_redirects=True,
                 headers=self._headers,
                 data={
                     'login_id': self._portal_id
-                }
+                },
+                allow_redirects=True
             )
 
             # SSO 인증
-            await session.post(
+            session.post(
                 url="https://portal.koreatech.ac.kr/exsignon/sso/sso_assert.jsp",
-                allow_redirects=True,
-                headers=self._headers
+                headers=self._headers,
+                allow_redirects=True
             )
 
             # LMS 접근 -> Session 발급
-            await session.get(
+            session.get(
                 url="https://el2.koreatech.ac.kr",
-                allow_redirects=True,
-                headers=self._headers
+                headers=self._headers,
+                allow_redirects=True
             )
 
-            self._cookies.update(session.cookie_jar)
+            self._cookies.update(session.cookies)
 
-        print('[LoginService] Login Success')
+        print('[AuthService] Login Success')
 
-    async def refresh(self):
+    def refresh(self):
         """
         로그인 세션을 갱신한다.
 
@@ -98,23 +101,24 @@ class LoginService:
 
         Unix Timestamp: 1970년 1월 1일 00:00:00 UTC를 기준점(0)으로 하여 경과된 초(seconds)를 나타낸다.
         """
-
-        print('[LoginService] Try Refresh')
+        print('[AuthService] Try Refresh')
 
         timestamp = int(datetime.now(self._timezone).timestamp())
 
-        async with ClientSession(cookies=self._cookies) as session:
-            await session.post(
+        with requests.Session() as session:
+            session.cookies.update(self._cookies)
+
+            session.post(
                 url=f'https://portal.koreatech.ac.kr/eXPortal/common/common.jsp?timeStamp={timestamp}',
-                allow_redirects=True,
                 headers=self._headers,
+                allow_redirects=True
             )
 
-            self._cookies.update(session.cookie_jar)
+            self._cookies.update(session.cookies)
 
-        print('[LoginService] Refresh Success')
+        print('[AuthService] Refresh Success')
 
 
 __all__ = (
-    'LoginService',
+    'AuthService',
 )
