@@ -17,14 +17,27 @@ if errorlevel 1 (
 echo Cleaning previous build...
 rd /s /q "build" 2>nul
 rd /s /q "dist" 2>nul
+rd /s /q "venv" 2>nul
+
+:: venv 생성
+echo Creating virtual environment...
+python -m venv venv
+
+:: venv 활성화
+echo Activating virtual environment...
+call venv\Scripts\activate
 
 :: 의존성 설치
 echo Installing dependencies...
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 
 :: PyInstaller로 빌드
 echo Building executable...
 python -m PyInstaller Koala.spec
+
+:: venv 비활성화
+deactivate
 
 echo Build complete!
 echo Executable is located in the dist folder
