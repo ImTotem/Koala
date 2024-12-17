@@ -17,9 +17,7 @@ class NotificationManager:
         :type assignments: list[Assignment]
         """
         assignments = set(assignments)
-        print(len(assignments))
-        print(bool(self._notified_assignments & assignments))
-        if self._notified_assignments & assignments:
+        if assignments - self._notified_assignments:
             self._send_new_assignment_notification()
             self._notified_assignments = assignments
 
