@@ -1,8 +1,3 @@
-import datetime
-from collections import defaultdict
-from dataclasses import field
-from typing import Union, DefaultDict
-
 from koala.domain.assignment.model import BaseAssignment
 from datetime import datetime, timedelta  # 날짜 및 시간 관련 기능을 위한 datetime 모듈 임포트
 
@@ -19,7 +14,7 @@ class AssignmentDTO:
         self.progress = progress
 
     @classmethod
-    def factory(cls, name, assignment: BaseAssignment):
+    def factory(cls, name: str, assignment: BaseAssignment):
         # TODO : 시간 A보정
         return cls(
             name=name,
