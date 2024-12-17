@@ -1,31 +1,73 @@
 """설정 유효성 검사용"""  # 설정 파일의 목적을 설명하는 주석
 
-from pydantic import field_validator  # Pydantic의 필드 검증기를 가져옴
-from pydantic_settings import BaseSettings  # Pydantic의 기본 설정 클래스를 가져옴
-from pytz import timezone  # pytz에서 시간대 관련 기능을 가져옴
-from pytz.exceptions import UnknownTimeZoneError  # 알 수 없는 시간대 예외를 가져옴
-from pytz.tzinfo import DstTzInfo  # DST 시간대 정보를 가져옴
+from dataclasses import dataclass, field
+from datetime import datetime
+
+import pytz
+
+DEFAULT_TIMEZONE = 'Asia/Seoul'
 
 
-class PortalConfig(BaseSettings):  # PortalConfig 클래스 정의, BaseSettings를 상속
-    id: str  # 포털 ID를 나타내는 문자열 필드
-    password: str  # 포털 비밀번호를 나타내는 문자열 필드
-    ip: str  # 포털 IP 주소를 나타내는 문자열 필드
+@dataclass
+class PortalConfig:
+    """포털 설정을 위한 데이터 클래스"""
+    id: str
+    password: str
+    ip: str
 
+    def validate(self) -> bool:
+        """
+        포털 설정의 유효성을 검사
+        - id, password, ip가 모두 비어있지 않은지 확인
+        - ip가 올바른 형식인지 확인
+        """
+        if not (self.id and self.password and self.ip):
+            return False
 
-class Config(BaseSettings):  # Config 클래스 정의, BaseSettings를 상속
-    portal: PortalConfig  # PortalConfig 인스턴스를 포함하는 필드
-    timezone: DstTzInfo = timezone('Asia/Seoul')  # 기본 시간대를 'Asia/Seoul'로 설정
-
-    @field_validator('timezone', mode='before')  # 'timezone' 필드에 대한 검증기 정의
-    def validate_timezone(cls, zone: str) -> DstTzInfo:  # 검증기 메서드 정의
+        # IP 주소 형식 검증
         try:
-            return timezone(zone)  # 주어진 시간대 문자열로 시간대 객체 생성
-        except UnknownTimeZoneError:  # 알 수 없는 시간대 예외 처리
-            return timezone('Asia/Seoul')  # 기본 시간대인 'Asia/Seoul' 반환
+            parts = self.ip.split('.')
+            if len(parts) != 4:
+                return False
+            return all(0 <= int(part) <= 255 for part in parts)
+        except (ValueError, AttributeError):
+            return False
+
+
+@dataclass
+class Config:
+    """애플리케이션 전체 설정을 위한 데이터 클래스"""
+    portal: PortalConfig
+    timezone: str
+    _tz: pytz.timezone = field(init=False)
+
+    def __post_init__(self):
+        """timezone 문자열로부터 tz 객체 초기화"""
+        try:
+            self._tz = pytz.timezone(self.timezone)
+        except pytz.exceptions.UnknownTimeZoneError:
+            self.timezone = DEFAULT_TIMEZONE
+            self._tz = pytz.timezone(DEFAULT_TIMEZONE)
+
+    @property
+    def tz(self) -> pytz.timezone:
+        return self._tz
+
+    def get_current_time(self) -> datetime:
+        """현재 시간을 설정된 timezone으로 반환"""
+        return datetime.now(self.tz)
+
+    def validate(self) -> bool:
+        """
+        전체 설정의 유효성 검사
+        - portal 설정이 유효한지 확인
+        - timezone이 올바르게 설정되었는지 확인
+        """
+        return self.portal.validate() and bool(self.tz)
 
 
 __all__ = (  # 모듈에서 공개할 객체를 정의
     'PortalConfig',  # PortalConfig 클래스를 공개
     'Config',  # Config 클래스를 공개
+    'DEFAULT_TIMEZONE'  # 기본 timezone을 공개
 )

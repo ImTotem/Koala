@@ -1,21 +1,22 @@
 from datetime import datetime
 from typing import Set
+from requests.cookies import RequestsCookieJar
 from urllib.parse import parse_qs, urlparse
 
-import aiohttp
+import requests
 from bs4 import BeautifulSoup, Tag
 
+from koala.domain.assignment.dto import AssignmentDTO
 from koala.domain.assignment.model import Course, AssignAssignment, QuizAssignment, VideoAssignment, Status
-from koala.domain.auth.model import Cookies
 from koala.utils import Subject
 
 
 class AssignmentService(Subject):
 
-    def __init__(self, cookies: Cookies, courses: Set[Course]):
+    def __init__(self, cookies: RequestsCookieJar):
         super().__init__()
         self._cookies = cookies
-        self._courses = courses
+        self._courses: Set[Course] = set()
 
     def get_assignments(self):
         assignments = []
@@ -23,51 +24,63 @@ class AssignmentService(Subject):
         for course in self._courses:
             assignments.extend(course.assignments.values())
 
-        return assignments
+        return list(map(lambda x:AssignmentDTO.factory(x), assignments))
 
-    async def crawling_course(self) -> None:
+    def crawling_course(self):
         """과정 목록 크롤링"""
-        async with aiohttp.ClientSession(cookies=self._cookies) as session:
-            async with session.get("https://el2.koreatech.ac.kr/") as response:
-                html = await response.text()
+        print('[AssignmentService] Try Crawling Courses')
 
-        soup = BeautifulSoup(html, 'lxml')
-        course_tags = soup.select('table[x-show="tab==0"] tbody tr')
+        with requests.Session() as session:
+            session.cookies.update(self._cookies)
 
-        for course_tag in course_tags:
-            a_tag = course_tag.select_one('td > a')
-            url = a_tag.get('href')
-            name = a_tag.text.strip()
-            _id = int(parse_qs(urlparse(url).query)['id'][0])
+            response = session.get("https://el2.koreatech.ac.kr/")
+            html = response.text
 
-            self._courses.add(Course(_id, url, name))
+            soup = BeautifulSoup(html, 'lxml')
+            course_tags = soup.select('table[x-show="tab==0"] tbody tr')
 
-    async def crawling_assignments(self, course: Course) -> bool:
-        async with aiohttp.ClientSession(cookies=self._cookies) as session:
-            async with session.get(f'{course.url}&section=0') as response:
-                html = await response.text()
+            for course_tag in course_tags:
+                a_tag = course_tag.select_one('td > a')
+                url = a_tag.get('href')
+                name = a_tag.text.strip()
+                _id = int(parse_qs(urlparse(url).query)['id'][0])
 
-        soup = BeautifulSoup(html, 'lxml')
-        assignment_tags = soup.select('li[class*="quiz"], li[class*="tubevod"], li[class*="assign"]')
+                self._courses.add(Course(_id, url, name))
 
-        assignments = []
-        for tag in assignment_tags:
-            classes = tag.get('class')
-            tag = tag.select('div > div > div')[1]
-            if 'assign' in classes:
-                assignments.append(self._crawling_assign(tag))
-            elif 'quiz' in classes:
-                assignments.append(self._crawling_quiz(tag))
-            elif 'tubevod' in classes:
-                assignment = self._crawling_video(tag)
-                if assignment:
-                    assignments.append(assignment)
+        print('[AssignmentService] Crawling Courses Success')
+
+    def crawling_assignments(self):
+        with requests.Session() as session:
+            session.cookies.update(self._cookies)
+
+            for course in self._courses:
+                print(f'[AssignmentService] Try Crawling Assignments - {course.name}')
+
+                response = session.get(f'{course.url}&section=0')
+                html = response.text
+
+                soup = BeautifulSoup(html, 'lxml')
+                assignment_tags = soup.select('li[class*="quiz"], li[class*="tubevod"], li[class*="assign"]')
+
+                assignments = []
+                for tag in assignment_tags:
+                    classes = tag.get('class')
+                    tag = tag.select('div > div > div')[1]
+                    if 'assign' in classes:
+                        assignments.append(self._crawling_assign(tag))
+                    elif 'quiz' in classes:
+                        assignments.append(self._crawling_quiz(tag))
+                    elif 'tubevod' in classes:
+                        assignment = self._crawling_video(tag)
+                        if assignment:
+                            assignments.append(assignment)
+
+                course.update(assignments)
+
+                print(f'[AssignmentService] Crawling Assignments Success - {course.name}')
 
         # 과제 업데이트 및 변경 여부 반환
-        has_changes = course.update(assignments)
-        if has_changes:
-            self.notify()
-        return has_changes
+        self.notify()
 
     def _crawling_assign(self, tag: Tag):
         activity, actions, *etc = tag.select('div')
